@@ -2,6 +2,8 @@ use futures_util::StreamExt;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Write;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
@@ -167,7 +169,8 @@ pub fn load_model(app: AppHandle, state: State<LLMState>) -> Result<String, Stri
     let log_file = File::create(&log_path).map_err(|e| e.to_string())?;
     let log_file_err = log_file.try_clone().map_err(|e| e.to_string())?;
 
-    let child = Command::new(&server_path)
+    let mut command = Command::new(&server_path);
+    command
         .arg("-m")
         .arg(&model_path)
         .arg("--port")
@@ -175,7 +178,12 @@ pub fn load_model(app: AppHandle, state: State<LLMState>) -> Result<String, Stri
         .arg("-c")
         .arg("2048")
         .stdout(Stdio::from(log_file))
-        .stderr(Stdio::from(log_file_err))
+        .stderr(Stdio::from(log_file_err));
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(0x08000000);
+
+    let child = command
         .spawn()
         .map_err(|e| format!("Failed to start server: {}", e))?;
 

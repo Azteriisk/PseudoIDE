@@ -45,3 +45,8 @@ dist-ssr
 /main.cpp
 /main.rs
 /main.exe
+
+# Temp
+*.zip
+temp/
+server_temp/

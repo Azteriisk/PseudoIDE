@@ -39,6 +39,7 @@ pub fn run() {
             execution::change_working_directory,
             execution::ensure_testing_grounds,
             execution::write_file,
+            execution::get_default_projects_path,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

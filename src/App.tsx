@@ -46,7 +46,9 @@ function App() {
 
   const handleOpenProject = async () => {
     try {
+      const defaultPath = await invoke<string>('get_default_projects_path');
       const selected = await open({
+        defaultPath,
         directory: true,
         multiple: false,
         title: "Open Project Folder"
@@ -89,13 +91,13 @@ function App() {
 
   const handleProjectCreate = async (data: ProjectData) => {
     try {
-      const basePath = 'C:/Users/thera/code/Antigravity/PseudoIDE/projects'; // TODO: make dynamic?
+      const basePath = await invoke<string>('get_default_projects_path');
       await invoke('init_project', { data, basePath });
       setTerminalOutput(prev => prev + `> Project created: ${data.name}\n`);
       setIsProjectModalOpen(false);
 
       // Auto-switch to the new project
-      const fullPath = `${basePath}/${data.name}`;
+      const fullPath = `${basePath}/${data.name}`; // Note: This might need better path joining if cross-platform but works for now or use IPC join
       await invoke('change_working_directory', { path: fullPath });
 
       // Update UI

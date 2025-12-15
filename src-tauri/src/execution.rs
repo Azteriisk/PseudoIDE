@@ -1,4 +1,6 @@
 use std::io::Write;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::process::Command;
 
 #[tauri::command]
@@ -64,11 +66,18 @@ pub async fn execute_code(
         let exe_path = cwd.join(exe_name);
 
         // Compile
-        let compile_output = Command::new(cmd)
+        let mut compile_cmd = Command::new(cmd);
+        compile_cmd
             .arg(&file_path)
             .arg("-o")
             .arg(&exe_path)
-            .current_dir(&cwd) // Run compiler in CWD
+            .arg(&exe_path)
+            .current_dir(&cwd); // Run compiler in CWD
+
+        #[cfg(target_os = "windows")]
+        compile_cmd.creation_flags(0x08000000);
+
+        let compile_output = compile_cmd
             .output()
             .map_err(|e| format!("Failed to run compiler: {}", e))?;
 
@@ -77,8 +86,14 @@ pub async fn execute_code(
         }
 
         // Run
-        Command::new(&exe_path)
-            .current_dir(&cwd)
+        // Run
+        let mut run_cmd = Command::new(&exe_path);
+        run_cmd.current_dir(&cwd);
+
+        #[cfg(target_os = "windows")]
+        run_cmd.creation_flags(0x08000000);
+
+        run_cmd
             .output()
             .map_err(|e| format!("Failed to run executable: {}", e))?
     } else {
@@ -87,9 +102,15 @@ pub async fn execute_code(
         // Python/Node also take the filename
         args.push(file_name.as_str());
 
-        Command::new(cmd)
-            .args(&args)
-            .current_dir(&cwd)
+        args.push(file_name.as_str());
+
+        let mut run_cmd = Command::new(cmd);
+        run_cmd.args(&args).current_dir(&cwd);
+
+        #[cfg(target_os = "windows")]
+        run_cmd.creation_flags(0x08000000);
+
+        run_cmd
             .output()
             .map_err(|e| format!("Failed to execute command: {}", e))?
     };
@@ -170,6 +191,9 @@ pub async fn run_terminal_command(
     #[cfg(not(target_os = "windows"))]
     cmd.args(&[arg, &command]);
 
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+
     let output = cmd
         .current_dir(&*cwd)
         .output()
@@ -207,9 +231,19 @@ pub fn change_working_directory(
 }
 
 #[tauri::command]
+pub fn get_default_projects_path() -> Result<String, String> {
+    let home = dirs::home_dir().ok_or("Could not find home directory")?;
+    let path = home.join("PseudoIDE").join("projects");
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 pub fn ensure_testing_grounds(state: State<'_, AppState>) -> Result<String, String> {
     let home = dirs::home_dir().ok_or("Could not find home directory")?;
-    let tg_path = home.join("PseudoIDE_Testing_Grounds");
+    let tg_path = home
+        .join("PseudoIDE")
+        .join("projects")
+        .join("testing_grounds");
 
     if !tg_path.exists() {
         std::fs::create_dir_all(&tg_path).map_err(|e| e.to_string())?;
