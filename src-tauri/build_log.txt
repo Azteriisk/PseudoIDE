@@ -1,0 +1,34 @@
+    Checking tauri-app v0.1.0 (C:\Users\thera\code\Antigravity\PseudoIDE\src-tauri)
+warning: unused import: `std::path::PathBuf`
+ --> src\llm.rs:1:5
+  |
+1 | use std::path::PathBuf;
+  |     ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+error[E0599]: no method named `json` found for struct `reqwest::Response` in the current scope
+  --> src\llm.rs:73:40
+   |
+73 |     let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+   |                                        ^^^^ method not found in `reqwest::Response`
+
+error[E0599]: no method named `json` found for struct `RequestBuilder` in the current scope
+   --> src\llm.rs:162:10
+    |
+161 |       let res = client.post("http://127.0.0.1:8080/completion")
+    |  _______________-
+162 | |         .json(&body)
+    | |         -^^^^ method not found in `RequestBuilder`
+    | |_________|
+    |
+
+warning: unused import: `tauri::Manager`
+  --> src\lib.rs:11:5
+   |
+11 | use tauri::Manager;
+   |     ^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0599`.
+warning: `tauri-app` (lib) generated 2 warnings
+error: could not compile `tauri-app` (lib) due to 2 previous errors; 2 warnings emitted
