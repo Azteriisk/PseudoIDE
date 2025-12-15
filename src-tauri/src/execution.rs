@@ -102,8 +102,6 @@ pub async fn execute_code(
         // Python/Node also take the filename
         args.push(file_name.as_str());
 
-        args.push(file_name.as_str());
-
         let mut run_cmd = Command::new(cmd);
         run_cmd.args(&args).current_dir(&cwd);
 
